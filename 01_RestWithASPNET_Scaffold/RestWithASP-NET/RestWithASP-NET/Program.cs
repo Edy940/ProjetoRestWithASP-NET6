@@ -1,11 +1,11 @@
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using RestWithASP_NET.Model.Context;
+using RestWithASP_NET.Services;
+using RestWithASP_NET.Services.Implementations;
 
 namespace RestWithASPNETUdemy
 {
@@ -13,14 +13,42 @@ namespace RestWithASPNETUdemy
     {
         public static void Main(string[] args)
         {
-            CreateHostBuilder(args).Build().Run();
-        }
+            var builder = WebApplication.CreateBuilder(args);
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+            // Configurar a string de conexão
+            var connectionString = builder.Configuration.GetConnectionString("SQLServerConnectionString");
+            builder.Services.AddDbContext<SQLServerContext>(options =>
+                options.UseSqlServer(connectionString));
+
+            // Registro do serviço IPersonService com a implementação PersonService
+            builder.Services.AddScoped<IPersonService, PersonServiceImplementation>();
+
+            // Adicionar serviços de controle
+            builder.Services.AddControllers();
+
+            var app = builder.Build();
+
+            // Configure o pipeline de requisições HTTP
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+
+            app.UseRouting();
+
+            app.UseAuthorization();
+
+            app.MapControllers();
+
+            app.Run();
+        }
     }
 }
