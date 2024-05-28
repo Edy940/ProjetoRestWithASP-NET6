@@ -1,5 +1,7 @@
-﻿using RestWithASP_NET.Model;
+﻿using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using RestWithASP_NET.Model;
 using RestWithASP_NET.Model.Context;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -14,15 +16,6 @@ namespace RestWithASP_NET.Services.Implementations
             _context = context;
         }
 
-        public Person Create(Person person)
-        {
-            return person;
-        }
-
-        public void Delete(long id)
-        {
-            // Implementação do método de exclusão
-        }
 
         public List<Person> FindAll()
         {
@@ -31,19 +24,77 @@ namespace RestWithASP_NET.Services.Implementations
 
         public Person FindByID(long id)
         {
-            return new Person
+
             {
-                Id = 1,
-                FirstName = "EdWander",
-                LastName = "Silva",
-                Address = "São Paulo Capital",
-                Gender = "Male"
-            };
+                return _context.Persons.SingleOrDefault(p => p.Id.Equals(id));
+            }
+        }
+
+        public Person Create(Person person)
+        {
+            try
+            {
+                _context.Add(person);
+                _context.SaveChanges();
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            return person;
         }
 
         public Person Update(Person person)
         {
+
+            if (!Exists(person.Id))
+            {
+                return new Person();
+            }
+            var result = _context.Persons.SingleOrDefault(p => p.Id.Equals(person.Id));
+            if (result != null)
+            {
+                try
+                {
+                    _context.Entry(result).CurrentValues.SetValues(person);
+                    _context.SaveChanges();
+
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+            }
             return person;
+
+        }
+
+        public void Delete(long id)
+        {
+            var result = _context.Persons.SingleOrDefault(p => p.Id.Equals(id));
+            if (result != null)
+            {
+                try
+                {
+                    _context.Persons.Remove(result);
+                    _context.SaveChanges();
+
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+            }
+           
+        }
+      
+        private bool Exists(long id)
+        {
+            return _context.Persons.Any(p => p.Id.Equals(id));
         }
     }
 }
